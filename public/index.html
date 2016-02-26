@@ -12,10 +12,79 @@
 
 			<textarea class="chat-textarea" placeholder="Enter Your Message"></textarea>
 
-			<div class="chat-status">Status: <span>Idle</span></div>
+			<div>Status: <span class="chat-status">Idle</span></div>
 
 		</div>
 
 		<script src="http://localhost:8080/socket.io/socket.io.js"></script>
+
+		<script>
+
+			 (function(){
+			 	var getNode = function(s){
+			 		return document.querySelector(s);
+			 	};
+
+			 	var textarea = getNode('.chat-textarea');
+			 	var chatName = getNode('.chat-name');
+			 	var chatMessage = getNode('.chat-messages');
+			 	var chatStatus = getNode('.chat-status');
+			 	var statusDefault = chatStatus.textContent;
+
+			 	var setStatus = function(data){
+
+			 		chatStatus.textContent = data;
+
+			 		if(data != statusDefault){
+			 			var delay = setTimeout(function(){
+			 				setStatus(statusDefault);
+			 				clearInterval();
+			 			},3000)
+			 		}
+			 	}
+
+			 	try{
+			 		var socket = io.connect("http://localhost:8080");
+			 	}
+			 	catch(e){
+
+			 	}
+
+			 	if(socket !==undefined){
+
+			 		socket.on('output', function(data){
+			 			if(data.length){
+			 				for(var i = 0 ; i<data.length;i++){
+			 					var message = document.createElement('div');
+			 					message.setAttribute('class', "chat-message");
+			 					message.textContent = data[i].name + ": " + data[i].message;
+
+			 					chatMessage.appendChild(message);
+			 					chatMessage.insertBefore(message,chatMessage.firstChild);
+			 				}
+			 			}
+			 		})
+
+			 		socket.on('status', function(data){
+			 			setStatus((typeof data == 'object' ? data.message : data));
+
+			 			if(data.clear==true){
+			 				textarea.value = '';
+			 			}
+			 		});
+
+			 		textarea.addEventListener('keydown', function(event){
+			 			var self = this;
+			 			var name = chatName.value;
+
+			 			if(event.which == 13 && event.shiftKey == false){
+			 				socket.emit('input', {"name": name, "message": self.value});
+			 				event.preventDefault();
+			 			}
+			 		})
+			 	}
+
+			 })();
+		</script>
 	</body>
 </html>
