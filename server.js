@@ -1,39 +1,54 @@
 var express = require('express');
+var mongo = require('mongodb');
+var client  = require('socket.io').listen(8080).sockets;
+var cors = require('cors');
 
 var app = express();
-
-var server = require('http').createServer(app);
-
-io = require('socket.io').listen(server);
-
-var nicknames = [];
+app.use(cors());
 
 console.log("Server Running on Port 3000");
-server.listen(3000);
+app.listen(3000);
+app.use('/', express.static(__dirname + '/public'));
 
 
-app.get('/', function(request,response){
+mongo.connect('mongodb://admin:admin@ds017688.mlab.com:17688/simple-chat-app', function(error, db){
+	if(error){
+		console.log("Cannot Connect To DB");
+		throw error;
+	}
+	else{
+		console.log("Connection To Server Established");
+	}
 
-	response.sendFile(__dirname + "/index.html");
+	var collection = db.collection('messages');
 
-}); 
 
-io.sockets.on('connection', function(socket){
-	socket.on('send message', function(data){
-		io.sockets.emit('new message', data);
+	client.on('connection', function(socket){
+		console.log("Someone has connected");
+
+		socket.on('input', function(data){
+			var name = data.name;
+			var message = data.message;
+			var whiteSpacePattern = /^\s*$/;
+
+			if(whiteSpacePattern.test(name) || whiteSpacePattern.test(message)){
+
+				console.log("Incorrect Input");
+				
+			}
+			else{
+
+				collection.insert({name: name, message: message}, function(){
+					console.log("Inserted");
+				});
+
+			}
+
+			
+		});
+
 	});
+});
 
-	socket.on('new user', function(data,callback){
-		if(nicknames.indexOf(data) != -1){
-			console.log("false");
-			callback(false);
-		}
-		else{
-			console.log("true");
-			callback(true);
-			socket.nickname = data;
-			nicknames.push(socket.nickname);
-			socket.emit('usernames',nicknames);
-		}
-	});
-})
+
+
