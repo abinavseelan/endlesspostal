@@ -10,8 +10,10 @@ console.log("Server Running on Port 3000");
 app.listen(3000);
 app.use('/', express.static(__dirname + '/public'));
 
+var mongoDBConnection = //Give your MongoDB URI Here.
 
-mongo.connect('mongodb://admin:admin@ds017688.mlab.com:17688/simple-chat-app', function(error, db){
+
+mongo.connect( mongoDBConnection, function(error, db){
 	if(error){
 		console.log("Cannot Connect To DB");
 		throw error;
